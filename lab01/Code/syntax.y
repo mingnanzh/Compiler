@@ -11,6 +11,8 @@
     int allright=1;
 %}
 
+%expect 3
+
 %union{
     struct treenode* node;
 }
