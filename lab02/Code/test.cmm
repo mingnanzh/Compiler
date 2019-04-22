@@ -1,0 +1,13 @@
+int q,c,d;
+
+struct a{
+    int s;
+    int b;
+};
+
+int main()
+{
+    int i,j[2][4];
+    struct a name;
+    j=i;
+}
