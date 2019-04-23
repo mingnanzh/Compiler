@@ -8,6 +8,7 @@
 struct Type_;
 struct FieldList_;
 struct VarTable;
+struct StruTable;
 
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;

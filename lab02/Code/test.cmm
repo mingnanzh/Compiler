@@ -1,13 +1,13 @@
-int q,c,d;
+int q,e,w;
 
-struct a{
-    int s;
-    int b;
-};
+struct c{
+    int qo;
+}shjkh,lklk;
+
+struct c akhdba;
 
 int main()
 {
-    int i,j[2][4];
-    struct a name;
-    j=i;
+    struct c i;
+    int kkk;
 }
