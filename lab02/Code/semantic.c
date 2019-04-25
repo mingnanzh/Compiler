@@ -169,7 +169,7 @@ Type findtype(char* name){
 
 FieldList getstructure(struct treenode* node){
     if(node -> type == 2){
-        //return NULL;
+        return NULL;
     }
     else{
         if(!strcmp(node -> child -> name, "Def")){
@@ -233,7 +233,7 @@ Type gettype(struct treenode* specifier){
                 type -> u.structure = getstructure(deflist);
             }
         }
-    // STRUCT Tag
+        // STRUCT Tag
         else if(!strcmp(specifier -> child -> child -> name, "STRUCT") && !strcmp(specifier -> child -> child -> sibling -> name, "Tag")){
             type = findtype(specifier -> child -> child -> sibling -> child -> value);
         }
