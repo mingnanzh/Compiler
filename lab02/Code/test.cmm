@@ -4,7 +4,10 @@ struct c{
     int qo;
 }shjkh,lklk;
 
-struct c akhdba;
+int fuck(struct c shjkkkkk, int a[1][3]){
+    int infunvar;
+    return 1;
+}
 
 int main()
 {
