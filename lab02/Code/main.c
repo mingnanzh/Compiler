@@ -24,7 +24,7 @@ int main(int argc,char** argv){
     yyparse();
     
     if(allright){
-        print_tree(root,0);
+        //print_tree(root,0);
         scanning(root);
     }
 
