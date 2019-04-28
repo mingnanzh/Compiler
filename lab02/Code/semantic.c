@@ -685,12 +685,16 @@ void scanning(struct treenode* r){
             struct treenode* declist = r -> child -> sibling; 
             while(declist){
                 insert(declist -> child -> child -> child, type);
+                if(declist -> child -> child -> sibling){
+                    if(check(declist -> child -> child -> sibling ->sibling))
+                        if(!typecmp(type,returntype(declist -> child -> child -> sibling ->sibling)))
+                            printf("Error type 5 at Line %d: Type mismatched for assignment.\n", declist -> child -> child -> lineno);
+                }
                 if(!declist -> child -> sibling)
                     declist = NULL;
                 else
                     declist = declist -> child -> sibling -> sibling;
-            }
-
+            };
             return;
         }
 
