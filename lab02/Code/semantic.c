@@ -5,14 +5,11 @@ struct Type_
     enum { BASIC, ARRAY, STRUCTURE } kind;
     union
     {
-        // 基本类型
         int basic;
-        // 数组类型信息包括元素类型与数组大小构成
         struct{
             int size;
             Type elem;
         }array;
-        // 结构体类型信息是一个链表
         FieldList structure;
     }u;
 };
@@ -53,10 +50,8 @@ struct FuncTable* FuncTable_head;
 struct FuncTable* FuncTable_end;
 
 int IfOrWhileOrReturn = 0;
-int inStructureDef = 0;
 
 Type functypenow;
-
 
 FieldList getstructure(struct treenode* node, FieldList fks);
 
@@ -128,7 +123,7 @@ void addFunc2Table(char* name, Type type, int varnum, FieldList structure){
     }
 }
 
-void shit(struct treenode* node, Type type){
+void insert(struct treenode* node, Type type){
     if(!strcmp(node -> name, "ID")){
         if(findVar(node -> value) || findStru(node -> value)){
             printf("Error type 3 at Line %d: Redefined Variable \"%s\".\n", node -> lineno, node -> value);
@@ -146,11 +141,11 @@ void shit(struct treenode* node, Type type){
         type_temp -> kind = ARRAY;
         type_temp -> u.array.size = atoi(node -> sibling -> sibling -> value);
         type_temp -> u.array.elem = type;
-        shit(node -> child, type_temp);  
+        insert(node -> child, type_temp);  
     }
 }
 
-Type shit2(struct treenode* node, Type type){
+Type insert2(struct treenode* node, Type type){
     if(!strcmp(node -> name, "ID")){
         if(findVar(node -> value) || findStru(node -> value)){
             printf("Error type 3 at Line %d: Redefined Variable \"%s\".\n", node -> lineno, node -> value);
@@ -170,7 +165,7 @@ Type shit2(struct treenode* node, Type type){
         type_temp -> kind = ARRAY;
         type_temp -> u.array.size = atoi(node -> sibling -> sibling -> value);
         type_temp -> u.array.elem = type;
-        return shit2(node -> child, type_temp); 
+        return insert2(node -> child, type_temp); 
     }
 }
 
@@ -248,7 +243,7 @@ FieldList getstructure(struct treenode* node, FieldList fks){
                 if(findField(getid(declist -> child -> child),fks)){
                     printf("Error type 15 at Line %d: Redefined field \"%s\".\n",declist -> child -> child -> lineno, getid(declist -> child -> child));
                 }else{
-                    structureField -> type = shit2(declist -> child -> child -> child, type);
+                    structureField -> type = insert2(declist -> child -> child -> child, type);
                 }
                 if(!ks){
                     ks = structureField;
@@ -689,7 +684,7 @@ void scanning(struct treenode* r){
             Type type = gettype(r -> child);
             struct treenode* declist = r -> child -> sibling; 
             while(declist){
-                shit(declist -> child -> child -> child, type);
+                insert(declist -> child -> child -> child, type);
                 if(!declist -> child -> sibling)
                     declist = NULL;
                 else
@@ -706,7 +701,7 @@ void scanning(struct treenode* r){
                 Type type = gettype(r -> child);
                 struct treenode* extdeclist = r -> child -> sibling;    
                 while(extdeclist){
-                    shit(extdeclist -> child -> child, type);
+                    insert(extdeclist -> child -> child, type);
                     if(!extdeclist -> child -> sibling)
                         extdeclist = NULL;
                     else
@@ -762,7 +757,7 @@ void scanning(struct treenode* r){
                         Type type_ = gettype(varlist -> child -> child);
                         FieldList structureField = (FieldList)malloc(sizeof(struct FieldList_));
                         structureField -> name = (char*)malloc(strlen(getid(varlist -> child -> child -> sibling))+1);
-                        structureField -> type = shit2(varlist -> child -> child -> sibling -> child, type_);
+                        structureField -> type = insert2(varlist -> child -> child -> sibling -> child, type_);
                         if(!ks){
                             ks = structureField;
                             js = ks;

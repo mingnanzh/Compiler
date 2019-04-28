@@ -39,6 +39,7 @@ id              {letter}({letter}|{digit})*
 
 %%
 {delim}                             {}
+\t                                  {}
 \n                                  {yycolumn=1;}
 struct                              {yylval.node=create_newnode(0,"STRUCT",yylineno,yytext);        return STRUCT;}
 return                              {yylval.node=create_newnode(0,"RETURN",yylineno,yytext);        return RETURN;}
