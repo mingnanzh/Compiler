@@ -444,7 +444,6 @@ int check(struct treenode* exp){
             }
             printf("Error type 7 at Line %d: Type mismatched for operands.\n", exp -> lineno);
             return 0;
-           return 1;
         }
         else
             return 0;
@@ -827,6 +826,7 @@ void scanning(struct treenode* r){
             }
             else{
                 if(check(r)){
+
                 }
             }
             return;
