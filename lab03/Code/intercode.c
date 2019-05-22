@@ -393,7 +393,7 @@ Intercode translate_exp(struct treenode* exp, Operand op)
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "AND") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
-        
+
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "OR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
@@ -405,7 +405,6 @@ Intercode translate_exp(struct treenode* exp, Operand op)
     }
     else if(!strcmp(exp->child->name, "NOT") && !strcmp(exp->child->sibling->name, "Exp"))
     {
-
     }
 }
 
