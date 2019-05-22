@@ -2,6 +2,8 @@
 
 int var_num = 1;
 
+ArgList arg_list = NULL;
+
 VarMap vmbegin, vmend;
 
 void insert2VarMap(char* name, Operand op)
@@ -22,6 +24,22 @@ void insert2VarMap(char* name, Operand op)
         temp->op = op;
         vmend->next = temp;
         vmend = temp;
+    }
+}
+
+void insertArg2ArgList(Operand arg)
+{
+    if(!arg_list)
+    {
+        arg_list = (ArgList)malloc(sizeof(struct ArgList_));
+        arg_list->op = arg;
+    }
+    else
+    {
+        ArgList temp = (ArgList)malloc(sizeof(struct ArgList_));
+        temp->op = arg;
+        temp->next = arg_list;
+        arg_list = temp;
     }
 }
 
@@ -99,6 +117,27 @@ Intercode LinkCode(Intercode code1, Intercode code2)
         return code2;
     else
         return NULL;
+}
+
+Intercode translate_args(struct treenode* args)
+{
+    struct treenode* exp = args->child;
+    if(!exp->sibling)
+    {
+        Operand t1 = new_temp();
+        Intercode code1 = translate_exp(exp, t1);
+        insertArg2ArgList(t1);
+        return code1;
+    }
+    else
+    {
+        struct treenode* args1 = exp->sibling->sibling;
+        Operand t1 = new_temp();
+        Intercode code1 = translate_exp(exp, t1);
+        insertArg2ArgList(t1);
+        Intercode code2 = translate_args(args1);
+        return LinkCode(code1, code2);
+    }   
 }
 
 Intercode translate_exp(struct treenode* exp, Operand op)
@@ -299,6 +338,74 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         code2->u.binop.op1 = t1;
         code2->u.binop.op2 = cons;
         return LinkCode(code1, code2);
+    }
+    else if(!strcmp(exp->child->name, "ID") && !strcmp(exp->child->sibling->name, "LP") && !strcmp(exp->child->sibling->sibling->name, "RP"))
+    {
+        struct treenode* id = exp->child;
+        if(!strcmp(id->value, "read"))
+        {
+            Intercode code1 = (Intercode)mallloc(sizeof(struct Intercode_));
+            code1->kind = READ_;
+            code1->u.read.op = op;
+            return code1;
+        }
+        else
+        {
+            Intercode code1 = (Intercode)mallloc(sizeof(struct Intercode_));
+            code1->kind = CALL_;
+            code1->u.call.result = op;
+            code1->u.call.funcname = (char*)malloc(strlen(id->value)+1);
+            strcpy(code1->u.call.funcname, id->value);
+            return code1;
+        }     
+    }
+    else if(!strcmp(exp->child->name, "ID") && !strcmp(exp->child->sibling->name, "LP") && !strcmp(exp->child->sibling->sibling->name, "Args") && !strcmp(exp->child->sibling->sibling->sibling->name, "RP"))
+    {
+        struct treenode* id = exp->child;
+        struct treenode* args = id->sibling->sibling;
+        arg_list = NULL;
+        Intercode code1 = translate_args(args);
+        if(!strcmp(id->value, "write"))
+        {
+            Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+            code2->kind = WRITE_;
+            code2->u.write.op = arg_list->op;
+            return LinkCode(code1, code2);
+        }
+        else
+        {
+            Intercode code2 = NULL;
+            while(arg_list)
+            {
+                Intercode code_temp = (Intercode)malloc(sizeof(struct Intercode_));
+                code_temp->kind = ARG_;
+                code_temp->u.arg.op = arg_list->op;
+                code2 = LinkCode(code2, code_temp);
+                arg_list = arg_list->next;
+            }
+            Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+            code3->kind = CALL_;
+            code3->u.call.result = op;
+            code3->u.call.funcname = (char*)malloc(strlen(id->value)+1);
+            strcpy(code3->u.call.funcname, id->value);
+            return LinkCode(code1, LinkCode(code2, code3));
+        }   
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "AND") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "OR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "RELOP") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+
+    }
+    else if(!strcmp(exp->child->name, "NOT") && !strcmp(exp->child->sibling->name, "Exp"))
+    {
+
     }
 }
 

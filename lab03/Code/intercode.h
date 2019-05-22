@@ -12,6 +12,7 @@
 typedef struct Operand_* Operand;
 typedef struct Intercode_* Intercode;
 typedef struct VarMap_* VarMap;
+typedef struct ArgList_* ArgList;
 
 struct Operand_
 {
@@ -30,9 +31,15 @@ struct VarMap_
     VarMap next;
 };
 
+struct ArgList_
+{
+    Operand op;
+    ArgList next;
+};
+
 struct Intercode_
 {
-    enum {ASSIGN_, ADD_, SUB_, MUL_, DIV_, LABEL_, FUNCTION_, GOTO_, CONDGOTO_, RETURN_, DEC_, ARG_, CALL_, PARAM_, REAN_, WRITE_} kind;
+    enum {ASSIGN_, ADD_, SUB_, MUL_, DIV_, LABEL_, FUNCTION_, GOTO_, CONDGOTO_, RETURN_, DEC_, ARG_, CALL_, PARAM_, READ_, WRITE_} kind;
     union
     {
         struct {Operand left, right;} assign;
