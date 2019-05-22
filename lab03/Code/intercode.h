@@ -15,13 +15,11 @@ typedef struct VarMap_* VarMap;
 
 struct Operand_
 {
-    enum {VARIABLE, TEMP, CONSTANT, ADDRESS} kind;
+    enum {VARIABLE, CONSTANT, GETADDRESS, GETVALUE} kind;
     union 
     {
         int var_no;
-        int temp_no;
-        int value;
-        char* varname;
+        char* value;
     }u;
 };
 
@@ -37,7 +35,7 @@ struct Intercode_
     enum {ASSIGN_, ADD_, SUB_, MUL_, DIV_, LABEL_, FUNCTION_, GOTO_, CONDGOTO_, RETURN_, DEC_, ARG_, CALL_, PARAM_, REAN_, WRITE_} kind;
     union
     {
-        struct {Operand op1, op2;} assign;
+        struct {Operand left, right;} assign;
         struct {Operand result, op1, op2;} binop;
         struct {char* funcname;} func;
         struct {int labelnum;} label;

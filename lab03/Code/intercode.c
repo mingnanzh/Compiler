@@ -1,7 +1,6 @@
 #include "intercode.h"
 
 int var_num = 1;
-int temp_num = 1;
 
 VarMap vmbegin, vmend;
 
@@ -38,6 +37,45 @@ Operand findOpInVarMap(char* name)
     return NULL;
 }
 
+Operand lookup(char* name)
+{
+    Operand op = findOpInVarMap(name);
+    if(!op)
+    {
+        op = (Operand)malloc(sizeof(struct Operand_));
+        op->kind = VARIABLE;
+        op->u.var_no = var_num;
+        insert2VarMap(name, op);
+        var_num = var_num + 1;
+    }
+    return op;
+}
+
+Operand new_temp()
+{
+    Operand op = (Operand)malloc(sizeof(struct Operand_));
+    op->kind = VARIABLE;
+    op->u.var_no = var_num;
+    var_num = var_num + 1;
+    return op;
+}
+
+Operand new_getaddress(int no)
+{
+    Operand op = (Operand)malloc(sizeof(struct Operand_));
+    op->kind = GETADDRESS;
+    op->u.var_no = no;
+    return op;
+}
+
+Operand new_getvalue(int no)
+{
+    Operand op = (Operand)malloc(sizeof(struct Operand_));
+    op->kind = GETVALUE;
+    op->u.var_no = no;
+    return op;
+}
+
 Intercode GetTail(Intercode code)
 {
     if(code->next)
@@ -63,17 +101,219 @@ Intercode LinkCode(Intercode code1, Intercode code2)
         return NULL;
 }
 
+Intercode translate_exp(struct treenode* exp, Operand op)
+{
+    if(!strcmp(exp->child->name, "INT"))
+    {
+        Operand right = (Operand)malloc(sizeof(struct Operand_));
+        right->kind = CONSTANT;
+        right->u.value = (char*)malloc(strlen(exp->child->value)+1);
+        strcpy(right->u.value, exp->child->value);
+        Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
+        code1->kind = ASSIGN_;
+        code1->u.assign.left = op;
+        code1->u.assign.right = right;
+        return code1;
+    }
+    else if(!strcmp(exp->child->name, "FLOAT"))
+    {
+        Operand right = (Operand)malloc(sizeof(struct Operand_));
+        right->kind = CONSTANT;
+        right->u.value = (char*)malloc(strlen(exp->child->value)+1);
+        strcpy(right->u.value, exp->child->value);
+        Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
+        code1->kind = ASSIGN_;
+        code1->u.assign.left = op;
+        code1->u.assign.right = right;
+        return code1;
+    }
+    else if(!strcmp(exp->child->name, "ID") && !(exp->child->sibling))
+    {
+        Operand right = lookup(exp->child->value);
+        Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
+        code1->kind = ASSIGN_;
+        code1->u.assign.left = op;
+        code1->u.assign.right = right;
+        return code1;
+    }
+    else if(!strcmp(exp->child->name, "LP") && !strcmp(exp->child->sibling->name, "Exp") && !strcmp(exp->child->sibling->sibling->name, "RP"))
+    {
+        return translate_exp(exp->child->sibling, op);
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "LB") && !strcmp(exp->child->sibling->sibling->name, "Exp") && !strcmp(exp->child->sibling->sibling->sibling->name, "RB"))
+    {
+        Operand id = lookup(exp->child->child->value);
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Operand t3 = new_getaddress(id->u.var_no);
+        Operand t4 = new_temp();
+        Operand t5 = new_getvalue(t4->u.var_no);
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("4")+1);
+        strcpy(cons->u.value, "4");
+        Intercode code1 = translate_exp(exp->child->sibling->sibling, t1);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = MUL_;
+        code2->u.binop.result = t2;
+        code2->u.binop.op1 = t1;
+        code2->u.binop.op2 = cons;
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = ADD_;
+        code3->u.binop.result = t4;
+        code3->u.binop.op1 = t3;
+        code3->u.binop.op2 = t2;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code4->kind = ASSIGN_;
+        code4->u.assign.left = op;
+        code4->u.assign.right = t5;
+        return LinkCode(code1, LinkCode(code2, LinkCode(code3, code4)));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "ASSIGNOP") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        if(!strcmp(exp1->child->name, "ID"))
+        {
+            Operand id = lookup(exp1->child->value);
+            Operand t1 = new_temp();
+            Intercode code1 = translate_exp(exp2, t1);
+            Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+            code2->kind = ASSIGN_;
+            code2->u.assign.left = id;
+            code2->u.assign.right = t1;
+            Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+            code3->kind = ASSIGN_;
+            code3->u.assign.left = op;
+            code3->u.assign.right = id;
+            return LinkCode(code1, LinkCode(code2, code3));
+        }
+        else if(!strcmp(exp1->child->child->name, "ID"))
+        {
+            Operand t5 = new_temp();
+            Operand id = lookup(exp1->child->child->value);
+            Operand t1 = new_temp();
+            Operand t2 = new_temp();
+            Operand t3 = new_getaddress(id->u.var_no);
+            Operand t4 = new_temp();
+            Operand t6 = new_getvalue(t4->u.var_no);
+            Operand cons = (Operand)malloc(sizeof(struct Operand_));
+            cons->kind = CONSTANT;
+            cons->u.value = (char*)malloc(strlen("4")+1);
+            strcpy(cons->u.value, "4");
+            Intercode code1 = translate_exp(exp1->child->sibling->sibling, t1);
+            Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+            code2->kind = MUL_;
+            code2->u.binop.result = t2;
+            code2->u.binop.op1 = t1;
+            code2->u.binop.op2 = cons;
+            Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+            code3->kind = ADD_;
+            code3->u.binop.result = t4;
+            code3->u.binop.op1 = t3;
+            code3->u.binop.op2 = t2;
+            Intercode code4 = translate_exp(exp2, t5);
+            Intercode code5 = (Intercode)malloc(sizeof(struct Intercode_));
+            code5->kind = ASSIGN_;
+            code5->u.assign.left = t6;
+            code5->u.assign.right = t5;
+            Intercode code6 = (Intercode)malloc(sizeof(struct Intercode_));
+            code6->kind = ASSIGN_;
+            code6->u.assign.left = op;
+            code6->u.assign.right = t6;
+            return LinkCode(code4, LinkCode(code1, LinkCode(code2, LinkCode(code3, LinkCode(code5, code6)))));
+        }
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "PLUS") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = translate_exp(exp2, t2);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = ADD_;
+        code3->u.binop.result = op;
+        code3->u.binop.op1 = t1;
+        code3->u.binop.op2 = t2;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "MINUS") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = translate_exp(exp2, t2);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = SUB_;
+        code3->u.binop.result = op;
+        code3->u.binop.op1 = t1;
+        code3->u.binop.op2 = t2;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "STAR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = translate_exp(exp2, t2);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = MUL_;
+        code3->u.binop.result = op;
+        code3->u.binop.op1 = t1;
+        code3->u.binop.op2 = t2;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "DIV") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = translate_exp(exp2, t2);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = DIV_;
+        code3->u.binop.result = op;
+        code3->u.binop.op1 = t1;
+        code3->u.binop.op2 = t2;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "MINUS") && !strcmp(exp->child->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child->sibling;
+        Operand t1 = new_temp();
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("0")+1);
+        strcpy(cons->u.value, "0");
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = SUB_;
+        code2->u.binop.result = op;
+        code2->u.binop.op1 = t1;
+        code2->u.binop.op2 = cons;
+        return LinkCode(code1, code2);
+    }
+}
+
 Intercode translate_paramdec(struct treenode* paramdec)
 {
     struct treenode* id = paramdec->child->sibling->child;
-    // TODO: 
-    /*
+    Operand op = (Operand)malloc(sizeof(struct Operand_));
+    op->kind = VARIABLE;
+    op->u.var_no = var_num;
+    insert2VarMap(id->value, op);
+    var_num = var_num + 1;
     Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
     code1->kind = PARAM_;
-    code1->u.param.varname = (char*)malloc(strlen(id->name)+1);
-    strcpy(code1->u.param.varname, id->name);
+    code1->u.param.op = op;
     return code1;
-    */
 }
 
 Intercode translate_varlist(struct treenode* varlist)
@@ -110,16 +350,17 @@ Intercode translate_vardec(struct treenode* vardec, int size)
 {
     if(!strcmp(vardec->child->name, "ID"))
     {
-        // TODO:
-        /*
         struct treenode* id = vardec->child;
+        Operand op = (Operand)malloc(sizeof(struct Operand_));
+        op->kind = VARIABLE;
+        op->u.var_no = var_num;
+        insert2VarMap(id->value, op);
+        var_num = var_num + 1;
         Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
         code1->kind = DEC_;
-        code1->u.dec.varname = (char*)malloc(strlen(id->name)+1);
-        strcpy(code1->u.dec.varname, id->name);
+        code1->u.dec.op = op;
         code1->u.dec.size = size;
         return code1;
-        */
     }
     else if(!strcmp(vardec->child->name, "VarDec"))
     {
@@ -140,7 +381,10 @@ Intercode translate_dec(struct treenode* dec)
     }
     else
     {
-
+        struct treenode* id = vardec->child;
+        struct treenode* exp = vardec->sibling->sibling;
+        Operand op = lookup(id->value);
+        return translate_exp(exp, op);
     }
 }
 
