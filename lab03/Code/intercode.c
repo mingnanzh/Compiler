@@ -141,6 +141,11 @@ Intercode translate_args(struct treenode* args)
     }   
 }
 
+Intercode translate_cond(struct treenode* exp, int label_true, int label_false)
+{
+
+}
+
 Intercode translate_exp(struct treenode* exp, Operand op)
 {
     if(!strcmp(exp->child->name, "INT"))
@@ -423,16 +428,96 @@ Intercode translate_exp(struct treenode* exp, Operand op)
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "OR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
-
+        int label1 = label_num++;
+        int label2 = label_num++;
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("0")+1);
+        strcpy(cons->u.value, "0");
+        Intercode code0 = (Intercode)malloc(sizeof(struct Intercode_));
+        code0->kind = ASSIGN_;
+        code0->u.assign.left = op;
+        code0->u.assign.right = cons;
+        Intercode code1 = translate_cond(exp, label1, label2);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label1;
+        Operand cons1 = (Operand)malloc(sizeof(struct Operand_));
+        cons1->kind = CONSTANT;
+        cons1->u.value = (char*)malloc(strlen("1")+1);
+        strcpy(cons1->u.value, "1");
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = ASSIGN_;
+        code3->u.assign.left = op;
+        code3->u.assign.right = cons1;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label2;
+        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "RELOP") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
-
+        int label1 = label_num++;
+        int label2 = label_num++;
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("0")+1);
+        strcpy(cons->u.value, "0");
+        Intercode code0 = (Intercode)malloc(sizeof(struct Intercode_));
+        code0->kind = ASSIGN_;
+        code0->u.assign.left = op;
+        code0->u.assign.right = cons;
+        Intercode code1 = translate_cond(exp, label1, label2);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label1;
+        Operand cons1 = (Operand)malloc(sizeof(struct Operand_));
+        cons1->kind = CONSTANT;
+        cons1->u.value = (char*)malloc(strlen("1")+1);
+        strcpy(cons1->u.value, "1");
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = ASSIGN_;
+        code3->u.assign.left = op;
+        code3->u.assign.right = cons1;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label2;
+        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else if(!strcmp(exp->child->name, "NOT") && !strcmp(exp->child->sibling->name, "Exp"))
     {
-
+        int label1 = label_num++;
+        int label2 = label_num++;
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("0")+1);
+        strcpy(cons->u.value, "0");
+        Intercode code0 = (Intercode)malloc(sizeof(struct Intercode_));
+        code0->kind = ASSIGN_;
+        code0->u.assign.left = op;
+        code0->u.assign.right = cons;
+        Intercode code1 = translate_cond(exp, label1, label2);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label1;
+        Operand cons1 = (Operand)malloc(sizeof(struct Operand_));
+        cons1->kind = CONSTANT;
+        cons1->u.value = (char*)malloc(strlen("1")+1);
+        strcpy(cons1->u.value, "1");
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = ASSIGN_;
+        code3->u.assign.left = op;
+        code3->u.assign.right = cons1;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = LABEL_;
+        code2->u.label.labelnum = label2;
+        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
+    else
+    {
+        return NULL;
+    }
+    
 }
 
 Intercode translate_paramdec(struct treenode* paramdec)
