@@ -18,4 +18,6 @@ struct FuncTable;
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
 
+void addFunc2Table(char* name, Type type, int varnum, FieldList structure);
+
 #endif

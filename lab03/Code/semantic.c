@@ -102,6 +102,18 @@ void addStru2Table(char* name, Type type){
 }
 
 void addFunc2Table(char* name, Type type, int varnum, FieldList structure){
+    if(!strcmp(name, "read")){
+        type = (Type)malloc(sizeof(struct Type_));
+        type->kind = BASIC;
+        type->u.basic = 0;
+    }
+    else if(!strcmp(name, "write")){
+        type = (Type)malloc(sizeof(struct Type_));
+        type->kind = BASIC;
+        type->u.basic = 0;
+        structure = (FieldList)malloc(sizeof(struct FieldList_));
+        structure->type = type;
+    }
     if(!FuncTable_head){
         FuncTable_head = (struct FuncTable *)malloc(sizeof(struct FuncTable));
         FuncTable_head -> name = (char*)malloc(strlen(name)+1);

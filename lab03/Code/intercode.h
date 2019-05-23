@@ -7,7 +7,6 @@
 #include <malloc.h>
 #include <math.h>
 #include "tree.h"
-#include "semantic.h"
 
 typedef struct Operand_* Operand;
 typedef struct Intercode_* Intercode;
@@ -48,6 +47,7 @@ struct Intercode_
         struct {int labelnum;} label;
         struct {int labelnum;} goto_;
         struct {Operand op1, op2; char* relop; int labelnum;} condgoto;
+        struct {Operand op;} return_;
         struct {Operand op; int size;} dec;
         struct {Operand op;} arg;
         struct {Operand result; char* funcname;} call;
@@ -70,6 +70,9 @@ Operand new_getvalue(int no);
 
 Intercode GetTail(Intercode code);
 Intercode LinkCode(Intercode code1, Intercode code2);
+
+void print_op(Operand op, FILE* f);
+void print_code(Intercode code, FILE* f);
 
 Intercode translate_args(struct treenode* args);
 Intercode translate_cond(struct treenode* exp, int label_true, int label_false);

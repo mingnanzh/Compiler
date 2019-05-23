@@ -120,6 +120,125 @@ Intercode LinkCode(Intercode code1, Intercode code2)
         return NULL;
 }
 
+void print_op(Operand op, FILE* f)
+{
+    if(op->kind == VARIABLE)
+        fprintf(f, "t%d", op->u.var_no);
+    else if(op->kind == CONSTANT)
+        fprintf(f, "#%s", op->u.value);
+    else if(op->kind == GETADDRESS)
+        fprintf(f, "&t%d", op->u.var_no);
+    else if(op->kind == GETVALUE)
+        fprintf(f, "*t%d", op->u.var_no);
+}
+
+void print_code(Intercode code, FILE* f)
+{
+    if(code)
+    {
+        if(code->kind == LABEL_ )
+            fprintf(f, "LABEL label%d :\n", code->u.label.labelnum);
+        else if(code->kind == FUNCTION_)
+            fprintf(f, "FUNCTION %s :\n", code->u.func.funcname);
+        else if(code->kind == ASSIGN_ && code->u.assign.left && code->u.assign.right)
+        {
+            print_op(code->u.assign.left, f);
+            fprintf(f, " := ");
+            print_op(code->u.assign.right, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == ADD_ && code->u.binop.result && code->u.binop.op1 && code->u.binop.op2)
+        {
+            print_op(code->u.binop.result, f);
+            fprintf(f, " := ");
+            print_op(code->u.binop.op1, f);
+            fprintf(f, " + ");
+            print_op(code->u.binop.op2, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == SUB_ && code->u.binop.result && code->u.binop.op1 && code->u.binop.op2)
+        {
+            print_op(code->u.binop.result, f);
+            fprintf(f, " := ");
+            print_op(code->u.binop.op1, f);
+            fprintf(f, " - ");
+            print_op(code->u.binop.op2, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == MUL_ && code->u.binop.result && code->u.binop.op1 && code->u.binop.op2)
+        {
+            print_op(code->u.binop.result, f);
+            fprintf(f, " := ");
+            print_op(code->u.binop.op1, f);
+            fprintf(f, " * ");
+            print_op(code->u.binop.op2, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == DIV_ && code->u.binop.result && code->u.binop.op1 && code->u.binop.op2)
+        {
+            print_op(code->u.binop.result, f);
+            fprintf(f, " := ");
+            print_op(code->u.binop.op1, f);
+            fprintf(f, " / ");
+            print_op(code->u.binop.op2, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == GOTO_)
+            fprintf(f, "GOTO label%d\n", code->u.goto_.labelnum);
+        else if(code->kind == CONDGOTO_ && code->u.condgoto.op1 && code->u.condgoto.op2)
+        {
+            fprintf(f, "IF ");
+            print_op(code->u.condgoto.op1, f);
+            fprintf(f, " %s ", code->u.condgoto.relop);
+            print_op(code->u.condgoto.op2, f);
+            fprintf(f, " GOTO label%d\n", code->u.condgoto.labelnum);
+        }
+        else if(code->kind == RETURN_ && code->u.return_.op)
+        {
+            fprintf(f, "RETURN ");
+            print_op(code->u.return_.op, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == ARG_ && code->u.arg.op)
+        {
+            fprintf(f, "ARG ");
+            print_op(code->u.arg.op, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == PARAM_ && code->u.param.op)
+        {
+            fprintf(f, "PARAM ");
+            print_op(code->u.param.op, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == READ_ && code->u.read.op)
+        {
+            fprintf(f, "READ ");
+            print_op(code->u.read.op, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == WRITE_ && code->u.write.op)
+        {
+            fprintf(f, "WRITE ");
+            print_op(code->u.write.op, f);
+            fprintf(f, "\n");
+        }
+        else if(code->kind == DEC_ && code->u.dec.op)
+        {
+            fprintf(f, "DEC ");
+            print_op(code->u.dec.op, f);
+            fprintf(f, " [%d]\n", code->u.dec.size);
+        }
+        else if(code->kind == CALL_ && code->u.call.result)
+        {
+            print_op(code->u.call.result, f);
+            fprintf(f, " := CALL %s\n", code->u.call.funcname);
+        }
+        print_code(code->next, f);
+    }
+}
+
+
 Intercode translate_args(struct treenode* args)
 {
     struct treenode* exp = args->child;
@@ -143,7 +262,76 @@ Intercode translate_args(struct treenode* args)
 
 Intercode translate_cond(struct treenode* exp, int label_true, int label_false)
 {
-
+    if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "AND") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        int label1 = label_num++;
+        Intercode code1 = translate_cond(exp1, label1, label_false);
+        Intercode code2 = translate_cond(exp2, label_true, label_false);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = LABEL_;
+        code3->u.label.labelnum = label1;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "OR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* exp2 = exp1->sibling->sibling;
+        int label1 = label_num++;
+        Intercode code1 = translate_cond(exp1, label_true, label1);
+        Intercode code2 = translate_cond(exp2, label_true, label_false);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = LABEL_;
+        code3->u.label.labelnum = label1;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
+    else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "RELOP") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child;
+        struct treenode* relop = exp1->sibling;
+        struct treenode* exp2 = relop->sibling;
+        Operand t1 = new_temp();
+        Operand t2 = new_temp();
+        Intercode code1 = translate_exp(exp1, t1);
+        Intercode code2 = translate_exp(exp2, t2);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = CONDGOTO_;
+        code3->u.condgoto.op1 = t1;
+        code3->u.condgoto.op2 = t2;
+        code3->u.condgoto.relop = (char*)malloc(strlen(relop->value)+1);
+        strcpy(code3->u.condgoto.relop, relop->value);
+        code3->u.condgoto.labelnum = label_true;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code4->kind = GOTO_;
+        code4->u.goto_.labelnum = label_false;
+        return LinkCode(code1, LinkCode(code2, LinkCode(code3, code4)));
+    }
+    else if(!strcmp(exp->child->name, "NOT") && !strcmp(exp->child->sibling->name, "Exp"))
+    {
+        struct treenode* exp1 = exp->child->sibling;
+        return translate_cond(exp1, label_false, label_true);
+    }
+    else
+    {
+        Operand t1 = new_temp();
+        Operand cons = (Operand)malloc(sizeof(struct Operand_));
+        cons->kind = CONSTANT;
+        cons->u.value = (char*)malloc(strlen("0")+1);
+        strcpy(cons->u.value, "0");
+        Intercode code1 = translate_exp(exp, t1);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = CONDGOTO_;
+        code2->u.condgoto.op1 = t1;
+        code2->u.condgoto.op2 = cons;
+        code2->u.condgoto.relop = (char*)malloc(strlen("!=")+1);
+        strcpy(code2->u.condgoto.relop, "!=");
+        code2->u.condgoto.labelnum = label_true;
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = GOTO_;
+        code3->u.goto_.labelnum = label_false;
+        return LinkCode(code1, LinkCode(code2, code3));
+    }
 }
 
 Intercode translate_exp(struct treenode* exp, Operand op)
@@ -341,8 +529,8 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
         code2->kind = SUB_;
         code2->u.binop.result = op;
-        code2->u.binop.op1 = t1;
-        code2->u.binop.op2 = cons;
+        code2->u.binop.op1 = cons;
+        code2->u.binop.op2 = t1;
         return LinkCode(code1, code2);
     }
     else if(!strcmp(exp->child->name, "ID") && !strcmp(exp->child->sibling->name, "LP") && !strcmp(exp->child->sibling->sibling->name, "RP"))
@@ -350,14 +538,14 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         struct treenode* id = exp->child;
         if(!strcmp(id->value, "read"))
         {
-            Intercode code1 = (Intercode)mallloc(sizeof(struct Intercode_));
+            Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
             code1->kind = READ_;
             code1->u.read.op = op;
             return code1;
         }
         else
         {
-            Intercode code1 = (Intercode)mallloc(sizeof(struct Intercode_));
+            Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
             code1->kind = CALL_;
             code1->u.call.result = op;
             code1->u.call.funcname = (char*)malloc(strlen(id->value)+1);
@@ -422,9 +610,9 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         code3->u.assign.left = op;
         code3->u.assign.right = cons1;
         Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
-        code2->kind = LABEL_;
-        code2->u.label.labelnum = label2;
-        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label2;
+        return LinkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "OR") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
@@ -451,9 +639,9 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         code3->u.assign.left = op;
         code3->u.assign.right = cons1;
         Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
-        code2->kind = LABEL_;
-        code2->u.label.labelnum = label2;
-        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label2;
+        return LinkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else if(!strcmp(exp->child->name, "Exp") && !strcmp(exp->child->sibling->name, "RELOP") && !strcmp(exp->child->sibling->sibling->name, "Exp"))
     {
@@ -480,9 +668,9 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         code3->u.assign.left = op;
         code3->u.assign.right = cons1;
         Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
-        code2->kind = LABEL_;
-        code2->u.label.labelnum = label2;
-        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label2;
+        return LinkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else if(!strcmp(exp->child->name, "NOT") && !strcmp(exp->child->sibling->name, "Exp"))
     {
@@ -509,9 +697,9 @@ Intercode translate_exp(struct treenode* exp, Operand op)
         code3->u.assign.left = op;
         code3->u.assign.right = cons1;
         Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
-        code2->kind = LABEL_;
-        code2->u.label.labelnum = label2;
-        return LInkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label2;
+        return LinkCode(code0, LinkCode(code1, LinkCode(code2, LinkCode(code3, code4))));
     }
     else
     {
@@ -552,8 +740,8 @@ Intercode translate_fundec(struct treenode* fundec)
 {
     Intercode code1 = (Intercode)malloc(sizeof(struct Intercode_));
     code1->kind = FUNCTION_;
-    code1->u.func.funcname = (char*)malloc(strlen(fundec->child->name)+1);
-    strcpy(code1->u.func.funcname, fundec->child->name);
+    code1->u.func.funcname = (char*)malloc(strlen(fundec->child->value)+1);
+    strcpy(code1->u.func.funcname, fundec->child->value);
     if(!strcmp(fundec->child->sibling->sibling->name, "VarList"))
     {
         struct treenode* varlist = fundec->child->sibling->sibling;
@@ -583,7 +771,7 @@ Intercode translate_vardec(struct treenode* vardec, int size)
     else if(!strcmp(vardec->child->name, "VarDec"))
     {
         struct treenode* vardec1 = vardec->child; 
-        return translate_vardec(vardec1, size * ctoi(vardec1->sibling->sibling->value));
+        return translate_vardec(vardec1, size * atoi(vardec1->sibling->sibling->value));
     }
 }
 
@@ -640,9 +828,106 @@ Intercode translate_deflist(struct treenode* deflist)
         return NULL;
 }
 
+Intercode translate_stmt(struct treenode* stmt)
+{
+    if(!strcmp(stmt->child->name, "Exp") && !strcmp(stmt->child->sibling->name, "SEMI"))
+    {
+        struct treenode* exp = stmt->child;
+        return translate_exp(exp, NULL);
+    }
+    else if(!strcmp(stmt->child->name, "CompSt"))
+    {
+        struct treenode* compst = stmt->child;
+        return translate_compst(compst);
+    }
+    else if(!strcmp(stmt->child->name, "RETURN") && !strcmp(stmt->child->sibling->name, "Exp") && !strcmp(stmt->child->sibling->sibling->name, "SEMI"))
+    {
+        struct treenode* exp = stmt->child->sibling;
+        Operand t1 = new_temp();
+        Intercode code1 = translate_exp(exp, t1);
+        Intercode code2 = (Intercode)malloc(sizeof(struct Intercode_));
+        code2->kind = RETURN_;
+        code2->u.return_.op = t1;
+        return LinkCode(code1, code2);
+    }
+    else if(!strcmp(stmt->child->name, "IF") && !strcmp(stmt->child->sibling->name, "LP") && !strcmp(stmt->child->sibling->sibling->name, "Exp") && !strcmp(stmt->child->sibling->sibling->sibling->name, "RP") && !strcmp(stmt->child->sibling->sibling->sibling->sibling->name, "Stmt") && !stmt->child->sibling->sibling->sibling->sibling->sibling)
+    {
+        struct treenode* exp = stmt->child->sibling->sibling;
+        struct treenode* stmt1 = exp->sibling->sibling;
+        int label1 = label_num++;
+        int label2 = label_num++;
+        Intercode code1 = translate_cond(exp, label1, label2);
+        Intercode code2 = translate_stmt(stmt1);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = LABEL_;
+        code3->u.label.labelnum = label1;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label2;
+        return LinkCode(code1, LinkCode(code3, LinkCode(code2, code4)));
+    }
+    else if(!strcmp(stmt->child->name, "IF") && !strcmp(stmt->child->sibling->name, "LP") && !strcmp(stmt->child->sibling->sibling->name, "Exp") && !strcmp(stmt->child->sibling->sibling->sibling->name, "RP") && !strcmp(stmt->child->sibling->sibling->sibling->sibling->name, "Stmt") && !strcmp(stmt->child->sibling->sibling->sibling->sibling->sibling->name, "ELSE") && !strcmp(stmt->child->sibling->sibling->sibling->sibling->sibling->sibling->name, "Stmt"))
+    {
+        struct treenode* exp = stmt->child->sibling->sibling;
+        struct treenode* stmt1 = exp->sibling->sibling;
+        struct treenode* stmt2 = stmt1->sibling->sibling;
+        int label1 = label_num++;
+        int label2 = label_num++;
+        int label3 = label_num++;
+        Intercode code1 = translate_cond(exp, label1, label2);
+        Intercode code2 = translate_stmt(stmt1);
+        Intercode code3 = translate_stmt(stmt2);
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label1;
+        Intercode code5 = (Intercode)malloc(sizeof(struct Intercode_));
+        code5->kind = LABEL_;
+        code5->u.label.labelnum = label2;
+        Intercode code6 = (Intercode)malloc(sizeof(struct Intercode_));
+        code6->kind = LABEL_;
+        code6->u.label.labelnum = label3;
+        Intercode code7 = (Intercode)malloc(sizeof(struct Intercode_));
+        code7->kind = GOTO_;
+        code7->u.goto_.labelnum = label3;
+        return LinkCode(code1, LinkCode(code4, LinkCode(code2, LinkCode(code7, LinkCode(code5, LinkCode(code3, code6))))));
+    }
+    else if(!strcmp(stmt->child->name, "WHILE") && !strcmp(stmt->child->sibling->name, "LP") && !strcmp(stmt->child->sibling->sibling->name, "Exp") && !strcmp(stmt->child->sibling->sibling->sibling->name, "RP") && !strcmp(stmt->child->sibling->sibling->sibling->sibling->name, "Stmt"))
+    {
+        struct treenode* exp = stmt->child->sibling->sibling;
+        struct treenode* stmt1 = exp->sibling->sibling;
+        int label1 = label_num++;
+        int label2 = label_num++;
+        int label3 = label_num++;
+        Intercode code1 = translate_cond(exp, label2, label3);
+        Intercode code2 = translate_stmt(stmt1);
+        Intercode code3 = (Intercode)malloc(sizeof(struct Intercode_));
+        code3->kind = GOTO_;
+        code3->u.goto_.labelnum = label1;
+        Intercode code4 = (Intercode)malloc(sizeof(struct Intercode_));
+        code4->kind = LABEL_;
+        code4->u.label.labelnum = label1;
+        Intercode code5 = (Intercode)malloc(sizeof(struct Intercode_));
+        code5->kind = LABEL_;
+        code5->u.label.labelnum = label2;
+        Intercode code6 = (Intercode)malloc(sizeof(struct Intercode_));
+        code6->kind = LABEL_;
+        code6->u.label.labelnum = label3;
+        return LinkCode(code4, LinkCode(code1, LinkCode(code5, LinkCode(code2, LinkCode(code3, code6)))));
+    }
+}
+
 Intercode translate_stmtlist(struct treenode* stmtlist)
 {
-
+    if(stmtlist->type != 2)
+    {
+        struct treenode* stmt = stmtlist->child;
+        struct treenode* stmtlist1 = stmt->sibling;
+        Intercode code1 = translate_stmt(stmt);
+        Intercode code2 = translate_stmtlist(stmtlist1);
+        return LinkCode(code1, code2);
+    }
+    else
+        return NULL;
 }
 
 Intercode translate_compst(struct treenode* compst)
