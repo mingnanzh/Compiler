@@ -1,0 +1,13 @@
+./parser Test/A1.cmm Result/a1.ir
+./parser Test/A2.cmm Result/a2.ir
+./parser Test/A3.cmm Result/a3.ir
+./parser Test/A4.cmm Result/a4.ir
+./parser Test/A5.cmm Result/a5.ir
+./parser Test/B1.cmm Result/b1.ir
+./parser Test/B2.cmm Result/b2.ir
+./parser Test/B3.cmm Result/b3.ir
+./parser Test/C1.cmm Result/c1.ir
+./parser Test/C2.cmm Result/c2.ir
+./parser Test/D1.cmm Result/d1.ir
+./parser Test/E1.cmm Result/e1.ir
+

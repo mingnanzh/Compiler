@@ -17,15 +17,9 @@ int main(int argc,char** argv){
         return 1;
 
     FILE* f = fopen(argv[1],"r");
-    FILE* irfile = fopen(argv[2], "w+");
 
     if(!f){
         perror(argv[1]);
-        return 1;
-    }
-
-    if(!irfile){
-        perror(argv[2]);
         return 1;
     }
 
@@ -39,11 +33,16 @@ int main(int argc,char** argv){
         addFunc2Table("read", NULL, 0, NULL);
         scanning(root);
         Intercode code = translate_program(root);
+        FILE* irfile = fopen(argv[2], "w+");
+        if(!irfile){
+            perror(argv[2]);
+            return 1;
+        }
         print_code(code, irfile);
+        fclose(irfile);
     }
 
     fclose(f);
-    fclose(irfile);
 
     return 0;
 }

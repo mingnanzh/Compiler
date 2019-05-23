@@ -1,0 +1,9 @@
+int fa(int a[2]){
+	return a[0];
+}
+
+int main()
+{
+	int ab[12];
+ 	return 0;
+}

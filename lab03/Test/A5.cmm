@@ -1,18 +1,24 @@
-struct Product {
-	int name;
-	int weight;
-	float price;
-};
-struct ProductB {
-	int nameB;
-	float weightB;
-	float priceB;
-};
-int main(){
-	struct Product a;
-	struct ProductB b;
-	a.name = b.nameB;
-	a.weight = b.weightB;
-	a.price = b.priceB;
+int fact(int m)
+{
+	int result = 1;
+	int j = 1;
+	while(j <= m)
+	{
+		result = result * j;
+		j = j + 1;
+	}
+	return result;
+}
+
+int main()
+{
+	int x[5];
+	int i = 0, N = 5;
+	while(i < N)
+	{
+		x[i] = i + 2;
+		write(fact(x[i]));
+		i = i + 1;
+	}
 	return 0;
 }

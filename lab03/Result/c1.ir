@@ -1,0 +1,190 @@
+FUNCTION mod :
+PARAM t1
+PARAM t2
+t4 := t1
+t8 := t1
+t9 := t2
+t6 := t8 / t9
+t7 := t2
+t5 := t6 * t7
+t3 := t4 - t5
+t10 := t3
+t11 := t3
+RETURN t11
+FUNCTION power :
+PARAM t12
+PARAM t13
+t17 := #1
+t18 := t13
+t15 := t17 + t18
+t16 := t13
+t14 := t15 - t16
+LABEL label1 :
+t19 := t13
+t29 := t14
+t30 := t14
+t27 := t29 - t30
+t28 := #90
+t25 := t27 + t28
+t26 := #89
+t23 := t25 - t26
+t24 := #1
+t21 := t23 + t24
+t22 := #2
+t20 := t21 - t22
+IF t19 > t20 GOTO label2
+GOTO label3
+LABEL label2 :
+t33 := t14
+t34 := t12
+t32 := t33 * t34
+t14 := t32
+t31 := t14
+t43 := #2
+t44 := #1
+t41 := t43 * t44
+t42 := t13
+t39 := t41 * t42
+t45 := #1
+t46 := t13
+t40 := t45 * t46
+t37 := t39 - t40
+t38 := #1
+t36 := t37 - t38
+t13 := t36
+t35 := t13
+GOTO label1
+LABEL label3 :
+t47 := t14
+RETURN t47
+FUNCTION getNumDigits :
+PARAM t48
+t49 := #0
+t50 := t48
+t51 := #0
+IF t50 < t51 GOTO label4
+GOTO label5
+LABEL label4 :
+t53 := #1
+t52 := #0 - t53
+RETURN t52
+LABEL label5 :
+LABEL label6 :
+t54 := t48
+t55 := #0
+IF t54 > t55 GOTO label7
+GOTO label8
+LABEL label7 :
+t58 := t48
+t59 := #10
+t57 := t58 / t59
+t48 := t57
+t56 := t48
+t62 := t49
+t63 := #2
+t61 := t62 + t63
+t49 := t61
+t60 := t49
+t66 := t49
+t67 := #2
+t65 := t66 + t67
+t49 := t65
+t64 := t49
+t70 := t49
+t71 := #3
+t69 := t70 - t71
+t49 := t69
+t68 := t49
+GOTO label6
+LABEL label8 :
+t72 := t49
+RETURN t72
+FUNCTION isNarcissistic :
+PARAM t73
+t78 := #1
+t79 := t73
+t76 := t78 + t79
+t77 := #1
+t75 := t76 - t77
+ARG t75
+t74 := CALL getNumDigits
+t80 := #0
+t81 := t73
+LABEL label9 :
+t82 := t81
+t83 := #0
+IF t82 > t83 GOTO label10
+GOTO label11
+LABEL label10 :
+t87 := t81
+t88 := #10
+ARG t88
+ARG t87
+t86 := CALL mod
+t85 := t86
+t84 := t85
+t93 := t81
+t94 := t85
+t91 := t93 - t94
+t92 := #10
+t90 := t91 / t92
+t81 := t90
+t89 := t81
+t97 := t80
+t99 := t85
+t100 := t74
+ARG t100
+ARG t99
+t98 := CALL power
+t96 := t97 + t98
+t80 := t96
+t95 := t80
+GOTO label9
+LABEL label11 :
+t101 := t80
+t102 := t73
+IF t101 == t102 GOTO label12
+GOTO label13
+LABEL label12 :
+t103 := #1
+RETURN t103
+GOTO label14
+LABEL label13 :
+t104 := #0
+RETURN t104
+LABEL label14 :
+FUNCTION main :
+t105 := #0
+t106 := #300
+LABEL label15 :
+t107 := t106
+t108 := #500
+IF t107 < t108 GOTO label16
+GOTO label17
+LABEL label16 :
+t111 := t106
+ARG t111
+t109 := CALL isNarcissistic
+t110 := #1
+IF t109 == t110 GOTO label18
+GOTO label19
+LABEL label18 :
+t113 := t106
+WRITE t113
+t116 := t105
+t117 := #1
+t115 := t116 + t117
+t105 := t115
+t114 := t105
+LABEL label19 :
+t120 := t106
+t121 := #1
+t119 := t120 + t121
+t106 := t119
+t118 := t106
+GOTO label15
+LABEL label17 :
+t123 := t105
+WRITE t123
+t124 := t105
+RETURN t124

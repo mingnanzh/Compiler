@@ -227,7 +227,7 @@ void print_code(Intercode code, FILE* f)
         {
             fprintf(f, "DEC ");
             print_op(code->u.dec.op, f);
-            fprintf(f, " [%d]\n", code->u.dec.size);
+            fprintf(f, " %d\n", 4*code->u.dec.size);
         }
         else if(code->kind == CALL_ && code->u.call.result)
         {
@@ -336,6 +336,8 @@ Intercode translate_cond(struct treenode* exp, int label_true, int label_false)
 
 Intercode translate_exp(struct treenode* exp, Operand op)
 {
+    if(!op)
+        op = new_temp();
     if(!strcmp(exp->child->name, "INT"))
     {
         Operand right = (Operand)malloc(sizeof(struct Operand_));
@@ -710,6 +712,16 @@ Intercode translate_exp(struct treenode* exp, Operand op)
 
 Intercode translate_paramdec(struct treenode* paramdec)
 {
+    if(!strcmp(paramdec->child->child->name, "StructSpecifier"))
+    {
+        printf("Cannot translate: Code contains variables or parameters of structure type.\n");
+        exit(0);
+    }
+    if(!strcmp(paramdec->child->sibling->child->name, "VarDec"))
+    {
+        printf("Cannot translate: Code contains variables or parameters of array type.\n");
+        exit(0);
+    }
     struct treenode* id = paramdec->child->sibling->child;
     Operand op = (Operand)malloc(sizeof(struct Operand_));
     op->kind = VARIABLE;
@@ -769,7 +781,7 @@ Intercode translate_vardec(struct treenode* vardec, int size)
         return code1;
     }
     else if(!strcmp(vardec->child->name, "VarDec"))
-    {
+    {   
         struct treenode* vardec1 = vardec->child; 
         return translate_vardec(vardec1, size * atoi(vardec1->sibling->sibling->value));
     }
@@ -782,6 +794,11 @@ Intercode translate_dec(struct treenode* dec)
     {
         if(!strcmp(vardec->child->name, "ID"))
             return NULL;
+        else if(strcmp(vardec->child->child->name, "ID"))
+        {
+            printf("Cannot translate: Code contains variables or parameters of hyper-dimension array type.\n");
+            exit(0);
+        }
         else
             return translate_vardec(vardec, 1);
     }
@@ -942,7 +959,10 @@ Intercode translate_compst(struct treenode* compst)
 Intercode translate_extdef(struct treenode* extdef)
 {
     if(!strcmp(extdef->child->name, "Specifier") && !strcmp(extdef->child->sibling->name, "SEMI"))
-        return NULL;
+    {
+        printf("Cannot translate: Code contains variables or parameters of structure type.\n");
+        exit(0);
+    }
     else if(!strcmp(extdef->child->name, "Specifier") && !strcmp(extdef->child->sibling->name, "ExtDecList") && !strcmp(extdef->child->sibling->sibling->name, "SEMI"))
         return NULL;
     else if(!strcmp(extdef->child->name, "Specifier") && !strcmp(extdef->child->sibling->name, "FunDec") && !strcmp(extdef->child->sibling->sibling->name, "CompSt"))
