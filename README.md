@@ -31,5 +31,9 @@
     16. <font color=black size=4 face="宋体">错误类型16：结构体的名字与前面定义过的结构体或变量的名字重复。</font>
     17. <font color=black size=4 face="宋体">错误类型17：直接使用未定义过的结构体来定义变量。</font>
 
+## Lab3
+-  ### <font face="宋体">中间代码生成：</font>
+&emsp;&emsp;<font color=black size=4 face="宋体">在词法分析、语法分析和语义分析的基础上，可对输入的`*.cmm`文件进行中间代码生成。但不支持结构体类型的变量，不支持高维数组的变量以及不支持一维数组作为函数参数出现。</font>
+
 
 
