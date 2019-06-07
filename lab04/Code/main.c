@@ -2,6 +2,7 @@
 #include "tree.h"
 #include "semantic.h"
 #include "intercode.h"
+#include "asmcode.h"
 
 extern int yyrestart();
 extern int yyparse();

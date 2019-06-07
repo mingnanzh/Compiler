@@ -74,7 +74,6 @@ Intercode LinkCode(Intercode code1, Intercode code2);
 
 void print_op(Operand op, FILE* f);
 void print_code(Intercode code, FILE* f);
-void asmcode(Intercode code, FILE* f);
 
 Intercode translate_args(struct treenode* args);
 Intercode translate_cond(struct treenode* exp, int label_true, int label_false);
